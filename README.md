@@ -1,6 +1,7 @@
 --------------Docker-------------- 
 #Install docker 
 $ docker build --tag python-django . 
+pip install -r requirements.txt
 $ docker run --publish 8000:8000 python-django 
 
 ---------Withouth-Docker--------- 
