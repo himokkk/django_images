@@ -19,5 +19,5 @@ class Image(models.Model):
 
 class Link_Token(models.Model):
     image = models.ForeignKey(Image, on_delete=models.CASCADE, default=1, related_name="image_token")
-    token = models.CharField(max_length=100, default="")
-    expiration_time = models.DateTimeField()
+    token = models.CharField(max_length=100, default="", null=True)
+    expiration_time = models.DateTimeField(null=True, blank=True)

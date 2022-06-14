@@ -1,10 +1,11 @@
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import User
 from django.conf import settings
 
 from .models import UserProfile
 from images.models import Image
+
 
 @receiver(post_save, sender = User)
 def update_profile(sender, instance,**kwargs):

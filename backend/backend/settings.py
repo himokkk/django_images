@@ -6,7 +6,6 @@ import os
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 os.environ['DJANGO_ALLOW_ASYNC_UNSAFE'] = "true"
 
-#django.setup()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 BASE_URL = 'http://localhost:8000/'
