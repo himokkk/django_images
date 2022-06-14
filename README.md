@@ -1,10 +1,10 @@
---------------Docker--------------
-#Install docker
-$ docker build --tag python-django .
-$ docker run --publish 8000:8000 python-django
+--------------Docker-------------- \n
+#Install docker \n
+$ docker build --tag python-django . \n
+$ docker run --publish 8000:8000 python-django \n
 
----------Withouth-Docker---------
-#Download and install Python 3.9 
+---------Withouth-Docker--------- \n
+#Download and install Python 3.9  
 #Install virtual enviroemnt
 $ pip install virualenv 
 #Create virtual enviroment
