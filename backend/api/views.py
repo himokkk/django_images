@@ -25,13 +25,18 @@ import os
 from users.models import UserProfile
 from images.models import Image, Link_Token
 from .serializers import UserSerializer
+from .permissions import IsImageOwner, ExpiringIsImageOwner
+from .create_token import create_token
 
 
 class TokenLinkView(APIView):
     def get(self, request, *args, **kwargs):
         string = kwargs['string']
-        
-        instance = Link_Token.objects.get(token="string")
+
+        try:
+            instance = Link_Token.objects.get(token=string)
+        except:
+            return Response(status=status.HTTP_204_NO_CONTENT)
         if instance is None:
             return Response(status=status.HTTP_204_NO_CONTENT)
             
@@ -49,18 +54,20 @@ class TokenLinkView(APIView):
 
 class ThumbnailView(APIView):
     authentication_classes = [BasicAuthentication, SessionAuthentication]
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated, IsImageOwner] 
 
     def get(self, request, *args, **kwargs):
         string = kwargs['string'].split("-")
         id = int(string[0])
         requested_size = int(string[1])
+        try:
+            instance = Image.objects.get(id=id)
+            profile = UserProfile.objects.get(user=request.user)
+        except:
+            HttpResponse(status=status.HTTP_204_NO_CONTENT) 
 
-        instance = Image.objects.get(id=id)
-        profile = UserProfile.objects.get(user=request.user)
         if instance is None or profile is None: 
-            HttpResponse(status=status.HTTP_204_NO_CONTENT)
-
+            return HttpResponse(status=status.HTTP_204_NO_CONTENT)
     
         sizes = profile.tier.thumbnail_sizes.split(' ') 
         for size in sizes:
@@ -70,21 +77,26 @@ class ThumbnailView(APIView):
                 membuf = BytesIO()
                 image.thumbnail(resize)
                 image.save(membuf, format="jpeg")
-                return HttpResponse(membuf.getvalue(), content_type="image/jpeg") 
+                return HttpResponse(membuf.getvalue(),
+                content_type="image/jpeg") 
         return HttpResponse() 
+
 
 
 class ExpireView(APIView):
     authentication_classes = [BasicAuthentication, SessionAuthentication]
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated, ExpiringIsImageOwner] 
 
     def get(self, request, *args, **kwargs):
+        
         string = kwargs['string'].split("-")
         id = int(string[0])
         delta_time = int(string[1])
-
-        instance = Image.objects.get(id=id)
-        profile = UserProfile.objects.get(user=request.user)
+        try:
+            instance = Image.objects.get(id=id)
+            profile = UserProfile.objects.get(user=request.user)
+        except:
+            HttpResponse(status=status.HTTP_204_NO_CONTENT)        
 
         if instance is None or profile is None:
             return HttpResponse(status=status.HTTP_204_NO_CONTENT)
@@ -96,21 +108,16 @@ class ExpireView(APIView):
         if delta_time <= min and delta_time >= max:
                 return HttpResponse(status=status.HTTP_203_NON_AUTHORITATIVE_INFORMATION)
 
-        time = datetime.datetime.now()+datetime.timedelta(seconds=delta_time)
-        print(delta_time, time, "creating token")
-        token = str(b64encode(os.urandom(20)).decode('utf-8'))
-        token = token.replace("/", '1').replace("+", '3').replace("=", '2')   
-        link_token = Link_Token.objects.create(token=token,
-            image = instance, expiration_time=time)
-        link_token.save()                           
+        token = create_token(instance, int(string[1]), kwargs)                     
             
         return HttpResponseRedirect(redirect_to
         =f'http://localhost:8000/api/images/token/{token}')
 
 
+
 class OriginalImageView(APIView):
     authentication_classes = [BasicAuthentication, SessionAuthentication]
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated, IsImageOwner] 
 
     def get(self, request, *args, **kwargs): 
         id = int(kwargs["id"])
